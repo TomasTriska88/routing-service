@@ -1,0 +1,34 @@
+# Maven build output
+target/
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# Eclipse metadata
+.metadata
+.classpath
+.project
+.settings/
+*.launch
+
+# IntelliJ IDEA metadata
+.idea/
+*.iml
+*.iws
+
+# NetBeans metadata
+nbproject/private/
+build/
+nbbuild/
+dist/
+nbdist/
+
+# VS Code metadata
+.vscode/
+
+# OS temporary files
+Thumbs.db
+desktop.ini
+.DS_Store
