@@ -29,12 +29,17 @@ for key, wanted in EXPECTED_SHA.items():
     if actual != wanted:
         raise SystemExit(f"unexpected {key} sha256: {actual}")
 
+test_path = Path("/config/tests/test_camera_ptz_guard.py")
+test_existed = test_path.exists()
+test_backup = None
+if test_existed:
+    test_backup = test_path.with_name(test_path.name + f".bak-ptz-guard-{stamp}")
+    shutil.copy2(test_path, test_backup)
+
 try:
     tools = original["tools"]
     old = 'CURRENT_IMAGE_ENTITY = "image.markvarec_dvur_aktualni_snimek"\n'
     new = old + 'PTZ_OWN_MOTION_SENSOR = "binary_sensor.markvarec_dvur_ptz_vlastni_pohyb"\n'
-    if tools.count(old) != 1 or PTZ_OWN_MOTION_SENSOR if False else False:
-        pass
     if tools.count(old) != 1:
         raise RuntimeError("tools current-image anchor mismatch")
     tools = tools.replace(old, new, 1)
@@ -72,7 +77,6 @@ try:
     block = block.replace(old, new, 1)
     automations = automations[:start] + block + automations[end:]
 
-    test_path = Path("/config/tests/test_camera_ptz_guard.py")
     test_path.parent.mkdir(parents=True, exist_ok=True)
     test = '''from pathlib import Path\n\nTOOLS = Path("/config/custom_components/markvarec_ezviz_tools/__init__.py").read_text(encoding="utf-8")\nEVENTS = Path("/config/custom_components/markvarec_camera_events/__init__.py").read_text(encoding="utf-8")\nAUTOS = Path("/config/automations.yaml").read_text(encoding="utf-8")\n\nSENSOR = "binary_sensor.markvarec_dvur_ptz_vlastni_pohyb"\nassert SENSOR in TOOLS\nassert 'PTZ_OWN_MOTION_SENSOR,\\n        "off"' in TOOLS\nassert SENSOR in EVENTS\nassert 'ptz_state is not None and ptz_state.state == "on"' in EVENTS\nassert "states('binary_sensor.markvarec_dvur_ptz_vlastni_pohyb') != 'on'" in AUTOS\nassert "ptz_control_coordinates(" not in TOOLS, "Guard deployment must not add PTZ actuation yet"\n\ndef security_allows(value):\n    return value != "on"\n\nassert not security_allows("on")\nfor value in ("off", "unknown", "unavailable", None):\n    assert security_allows(value)\nprint("CAMERA_PTZ_GUARD_TESTS_OK")\n'''
 
@@ -83,21 +87,29 @@ try:
         tmp = path.with_name(path.name + ".new-ptz-guard")
         tmp.write_text(text, encoding="utf-8")
         temps[key] = tmp
+    test_tmp = test_path.with_name(test_path.name + ".new-ptz-guard")
+    test_tmp.write_text(test, encoding="utf-8")
     py_compile.compile(str(temps["tools"]), doraise=True)
     py_compile.compile(str(temps["events"]), doraise=True)
-    py_compile.compile(str(test_path), doraise=True)
+    py_compile.compile(str(test_tmp), doraise=True)
     for key, tmp in temps.items():
         os.replace(tmp, FILES[key])
+    os.replace(test_tmp, test_path)
 
     ns = {"__name__": "__main__"}
     exec(compile(test_path.read_text(encoding="utf-8"), str(test_path), "exec"), ns, ns)
 except Exception:
     for key, backup in backups.items():
         shutil.copy2(backup, FILES[key])
+    if test_existed and test_backup is not None:
+        shutil.copy2(test_backup, test_path)
+    elif test_path.exists():
+        test_path.unlink()
     raise
 
 print("CAMERA_PTZ_GUARD_PATCHED")
 for key, path in FILES.items():
     print(f"{key.upper()}_SHA256={hashlib.sha256(path.read_bytes()).hexdigest()}")
+print(f"TEST_SHA256={hashlib.sha256(test_path.read_bytes()).hexdigest()}")
 for key, backup in backups.items():
     print(f"{key.upper()}_BACKUP={backup}")
