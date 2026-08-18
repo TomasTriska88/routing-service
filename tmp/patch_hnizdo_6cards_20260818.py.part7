@@ -1,0 +1,39 @@
+read_text(encoding="utf-8"))
+    for p, h in EXPECTED.items():
+        assert_sha(Path(p), h)
+    for path, meta in state["original"].items():
+        p = Path(path)
+        if meta is None:
+            assert not p.exists(), f"{p} appeared after prepare"
+        else:
+            assert p.exists(), f"{p} disappeared after prepare"
+            assert sha(p) == meta["sha"], f"{p} changed after prepare"
+    for path, meta in state["staged"].items():
+        p = Path(path).with_name(Path(path).name + ".new-hnizdo")
+        assert p.exists(), f"missing staged {p}"
+        assert sha(p) == meta["sha"], f"staged drift {p}"
+
+    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    backups = []
+    for path in state["staged"]:
+        target = Path(path)
+        staged = target.with_name(target.name + ".new-hnizdo")
+        if target.exists():
+            backup = target.with_name(target.name + f".bak-hnizdo6-{stamp}")
+            shutil.copy2(target, backup)
+            backups.append(str(backup))
+        os.replace(staged, target)
+    print("COMMITTED", stamp)
+    for path, meta in state["staged"].items():
+        p = Path(path)
+        print(path, sha(p), p.stat().st_size)
+    print("BACKUPS", ",".join(backups))
+
+if __name__ == "__main__":
+    mode = sys.argv[1] if len(sys.argv) > 1 else "prepare"
+    if mode == "prepare":
+        prepare()
+    elif mode == "commit":
+        commit()
+    else:
+        raise SystemExit(f"unknown mode {mode}")
