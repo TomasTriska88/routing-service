@@ -1,0 +1,52 @@
+ay.isArray(a.activity_history) ? a.activity_history.slice(-3).reverse() : [];
+
+    const internetBad = this._bad(c.internet_entity);
+    const bridgeBad = this._bad(c.bridge_entity);
+    const voiceBad = this._voiceBad(c.voice_entity);
+    const hardBad = internetBad || bridgeBad;
+    const level = hardBad ? "critical" : voiceBad ? "watch" : "normal";
+    const headline = hardBad ? "Hnízdo potřebuje pozornost" : voiceBad ? "Hnízdo funguje, hlas je mimo" : "Hnízdo je v pořádku";
+    const subline = hardBad
+      ? (internetBad ? "Lokální internet není potvrzený." : "HA bridge není aktivní.")
+      : voiceBad ? "Dashboard a automatizace běží dál." : "Spojení, bridge i hlas jsou dostupné.";
+
+    const health = [
+      { icon:"🌐", label:"Internet", value:internetBad ? "problém" : "online", bad:internetBad, entity:c.internet_entity },
+      { icon:"🔗", label:"HA bridge", value:bridgeBad ? "problém" : "aktivní", bad:bridgeBad, entity:c.bridge_entity },
+      { icon:"🔊", label:"Hlas", value:voiceBad ? "nedostupný" : "připraven", bad:voiceBad, entity:c.voice_entity },
+    ];
+    const key = JSON.stringify([name, icon, thought, history, health.map(x => [x.value,x.bad])]);
+    if (!force && key === this._lastRenderKey) return;
+    this._lastRenderKey = key;
+
+    const chips = health.map((x,i) => `
+      <button class="chip ${x.bad ? "bad" : ""}" data-health="${i}">
+        <span>${x.icon}</span><div><small>${this._esc(x.label)}</small><strong>${this._esc(x.value)}</strong></div>
+      </button>`).join("");
+
+    const activity = history.length ? history.map(item => {
+      const trigger = String(item?.trigger || "");
+      const mark = item?.status === "error" ? "⚠️" : trigger === "requested" ? "🟣" : "🟢";
+      const desc = item?.description || item?.tool || "aktivita";
+      return `<div class="activity"><span>${mark}</span><time>${this._esc(this._time(item?.timestamp))}</time><strong>${this._esc(desc)}</strong></div>`;
+    }).join("") : `<div class="activity empty"><span>🌙</span><strong>Zatím žádná nová aktivita.</strong></div>`;
+
+    this.shadowRoot.innerHTML = `
+      <style>
+        :host { display:block; height:100%; min-width:0; container-type:inline-size; }
+        ha-card { height:100%; overflow:hidden; }
+        .wrap {
+          box-sizing:border-box; height:100%; min-height:220px; padding:14px 16px 13px;
+          display:flex; flex-direction:column; gap:10px;
+          background:
+            radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--primary-color) 13%, transparent), transparent 33%),
+            var(--ha-card-background,var(--card-background-color));
+        }
+        .hero { display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:12px; align-items:center; min-width:0; }
+        .avatar { font-size:42px; line-height:1; filter:drop-shadow(0 2px 8px rgba(0,0,0,.15)); }
+        .copy { min-width:0; }
+        .eyebrow { font-size:10px; text-transform:uppercase; letter-spacing:.10em; opacity:.55; }
+        h2 { margin:2px 0 0; font-size:20px; line-height:1.12; }
+        .sub { margin-top:3px; font-size:10px; opacity:.62; line-height:1.25; }
+        .mode {
+          bor
