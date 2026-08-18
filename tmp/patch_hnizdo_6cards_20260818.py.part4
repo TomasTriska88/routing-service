@@ -1,0 +1,67 @@
+a-card>`;
+
+    this.shadowRoot.querySelectorAll("[data-health]").forEach(el => {
+      el.addEventListener("click", () => {
+        const item = health[Number(el.getAttribute("data-health"))];
+        this._moreInfo(item?.entity);
+      });
+    });
+  }
+
+  static getStubConfig() { return { name:"Lina" }; }
+}
+
+if (!customElements.get("lina-home-card")) {
+  customElements.define("lina-home-card", LinaHomeCard);
+}
+window.customCards = window.customCards || [];
+if (!window.customCards.some(c => c.type === "lina-home-card")) {
+  window.customCards.push({
+    type:"lina-home-card",
+    name:"Lina Home Card",
+    description:"TV-first souhrn Linina Hnízda a jeho dostupnosti.",
+    preview:true,
+  });
+}
+'''
+
+def prepare() -> None:
+    for p, h in EXPECTED.items():
+        assert_sha(Path(p), h)
+
+    weather = WEATHER.read_text(encoding="utf-8")
+    weather = replace_once(weather,
+        'const daily = (this._forecast.daily || []).slice(0,4);',
+        'const daily = (this._forecast.daily || []).slice(0,6);',
+        "weather daily count")
+    weather = replace_once(weather,
+        ':host { display:block; }',
+        ':host { display:block; height:100%; min-width:0; }',
+        "weather host height")
+    weather = replace_once(weather,
+        'ha-card { overflow:hidden; cursor:pointer; container-type:inline-size; }',
+        'ha-card { height:100%; overflow:hidden; cursor:pointer; container-type:inline-size; }',
+        "weather card height")
+    weather = replace_once(weather,
+        '.forecasts { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:7px; margin-top:7px; }',
+        '.forecasts { display:grid; grid-template-columns:1fr; gap:7px; margin-top:7px; }',
+        "weather forecasts columns")
+    weather = replace_once(weather,
+        '.forecast { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:4px; }',
+        '.forecast { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:4px; }',
+        "weather daily grid count")
+    weather = replace_once(weather,
+        '${tempTrend ? `<div class="temp-trend"><strong>${this._esc(tempTrend.label)}</strong>${tempTrend.detail ? ` · ${this._esc(tempTrend.detail)}` : ""}${tempTrend.far ? `<small>${this._esc(tempTrend.far)}${tempTrend.farDetail ? ` · ${this._esc(tempTrend.farDetail)}` : ""}</small>` : ""}</div>` : ""}',
+        '${tempTrend ? `<div class="temp-trend"><strong>${this._esc((tempTrend.longRange ? "0–15 dní · " : "") + tempTrend.label)}</strong>${tempTrend.detail ? ` · ${this._esc(tempTrend.detail)}` : ""}${tempTrend.far ? `<small>${this._esc(tempTrend.far)}${tempTrend.farDetail ? ` · ${this._esc(tempTrend.farDetail)}` : ""}</small>` : ""}</div>` : ""}',
+        "weather long-range label")
+    old_forecasts = '''          <div class="forecasts">
+            <div class="forecast-group">
+              <div class="group-title">nejbližší hodiny</div>
+              <div class="forecast">${hourlyHtml}</div>
+            </div>
+            <div class="forecast-group">
+              <div class="group-title">další dny</div>
+              <div class="forecast">${dailyHtml}</div>
+            </div>
+          </div>'''
+    new_forecasts = '''  
