@@ -1,0 +1,65 @@
+y = ENERGY_STAGE.read_text(encoding="utf-8")
+    (ENERGY_FINAL.with_name(ENERGY_FINAL.name + ".new-hnizdo")).write_text(energy, encoding="utf-8")
+    (HOME.with_name(HOME.name + ".new-hnizdo")).write_text(HOME_JS, encoding="utf-8")
+
+    rdata = json.loads(RESOURCES.read_text(encoding="utf-8"))
+    items = rdata.get("data", {}).get("items", [])
+    desired = {
+        "/local/lina-weather-card.js": "/local/lina-weather-card.js?v=20260818-tv2",
+        "/local/lina-rainwater-card.js": "/local/lina-rainwater-card.js?v=20260818-water2",
+        "/local/lina-energy-card.js": "/local/lina-energy-card.js?v=20260818-v1",
+        "/local/lina-home-card.js": "/local/lina-home-card.js?v=20260818-v1",
+    }
+    for base, url in desired.items():
+        hits = [x for x in items if str(x.get("url","")).split("?",1)[0] == base]
+        assert len(hits) <= 1, f"duplicate resource {base}: {hits}"
+        if hits:
+            hits[0]["url"] = url
+            hits[0]["type"] = "module"
+        else:
+            items.append({"id": uuid.uuid4().hex, "url": url, "type": "module"})
+    RESOURCES.with_name(RESOURCES.name + ".new-hnizdo").write_text(
+        json.dumps(rdata, ensure_ascii=False, separators=(",",":")), encoding="utf-8"
+    )
+
+    ddata = json.loads(DASHBOARD.read_text(encoding="utf-8"))
+    data = ddata.get("data", {})
+    cfg = data.get("config", data)
+    views = cfg.get("views", [])
+    view = next(x for x in views if x.get("path") == "prehled")
+    view["type"] = "panel"
+    view.pop("sections", None)
+    view["cards"] = [{
+        "type": "grid",
+        "columns": 3,
+        "square": False,
+        "cards": [
+            {"type":"custom:lina-home-card", "name":"Lina"},
+            {"type":"custom:lina-weather-card", "entity":"weather.zahrada_pocasi_home", "name":"Počasí Markvarec", "radar_entity":"sensor.chmi_radar_markvarec"},
+            {"type":"custom:lina-security-card", "name":"Bezpečnost"},
+            {"type":"custom:lina-climate-safety-card", "name":"Klima a teplotní bezpečnost", "weather_entity":"weather.zahrada_pocasi_home"},
+            {"type":"custom:lina-energy-card", "name":"Energie"},
+            {"type":"custom:lina-rainwater-card", "entity":"input_number.destovka_stav_l", "name":"Voda"},
+        ],
+    }]
+    DASHBOARD.with_name(DASHBOARD.name + ".new-hnizdo").write_text(
+        json.dumps(ddata, ensure_ascii=False, separators=(",",":")), encoding="utf-8"
+    )
+
+    staged = {}
+    for target in [WEATHER, RAIN, ENERGY_FINAL, HOME, RESOURCES, DASHBOARD]:
+        p = target.with_name(target.name + ".new-hnizdo")
+        staged[str(target)] = {"sha": sha(p), "size": p.stat().st_size}
+    original = {}
+    for target in [WEATHER, RAIN, ENERGY_FINAL, HOME, RESOURCES, DASHBOARD]:
+        if target.exists():
+            original[str(target)] = {"sha": sha(target), "size": target.stat().st_size}
+        else:
+            original[str(target)] = None
+    STATE.write_text(json.dumps({"staged": staged, "original": original}, ensure_ascii=False, indent=2), encoding="utf-8")
+    print("PREPARED")
+    for path, meta in staged.items():
+        print(path, meta["sha"], meta["size"])
+
+def commit() -> None:
+    state = json.loads(STATE.
