@@ -1,0 +1,8 @@
+{
+  "domain": "markvarec_ezviz_tools",
+  "name": "Markvarec EZVIZ tools",
+  "version": "0.1.0",
+  "dependencies": ["image"],
+  "after_dependencies": ["ezviz"],
+  "codeowners": []
+}
