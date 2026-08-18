@@ -1,0 +1,58 @@
+der-radius:999px; padding:6px 9px; font-size:9px; font-weight:800; white-space:nowrap;
+          background:rgba(76,175,80,.11); border:1px solid rgba(76,175,80,.20);
+        }
+        .watch .mode { background:rgba(255,193,7,.14); border-color:rgba(255,193,7,.25); }
+        .critical .mode { background:rgba(244,67,54,.15); border-color:rgba(244,67,54,.30); }
+        .thought {
+          border-radius:14px; padding:9px 10px; font-size:11px; line-height:1.35;
+          background:rgba(127,127,127,.065); overflow-wrap:anywhere;
+          display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;
+        }
+        .health { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; }
+        .chip {
+          appearance:none; color:inherit; border:1px solid transparent; border-radius:11px; padding:7px 8px;
+          background:rgba(127,127,127,.055); display:flex; gap:7px; align-items:center; min-width:0; text-align:left;
+          cursor:pointer;
+        }
+        .chip.bad { background:rgba(244,67,54,.10); border-color:rgba(244,67,54,.18); }
+        .chip > span { font-size:17px; flex:0 0 auto; }
+        .chip div { min-width:0; }
+        .chip small,.chip strong { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .chip small { font-size:8px; opacity:.52; }
+        .chip strong { font-size:11px; margin-top:1px; }
+        .activity-title { margin-top:auto; font-size:9px; text-transform:uppercase; letter-spacing:.08em; opacity:.48; }
+        .activities { display:grid; gap:4px; }
+        .activity {
+          min-width:0; display:grid; grid-template-columns:auto 34px minmax(0,1fr); gap:6px; align-items:center;
+          padding:5px 7px; border-radius:9px; background:rgba(127,127,127,.045);
+        }
+        .activity span { font-size:11px; }
+        .activity time { font-size:9px; opacity:.48; }
+        .activity strong { font-size:9px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .activity.empty { grid-template-columns:auto minmax(0,1fr); opacity:.55; }
+        @container (max-width:460px) {
+          .wrap { padding:12px; }
+          .hero { grid-template-columns:auto 1fr; gap:9px; }
+          .avatar { font-size:35px; }
+          h2 { font-size:17px; }
+          .mode { grid-column:1/-1; justify-self:start; padding:4px 7px; }
+          .health { grid-template-columns:1fr; }
+        }
+      </style>
+      <ha-card>
+        <div class="wrap ${level}">
+          <div class="hero">
+            <div class="avatar">${this._esc(icon)}</div>
+            <div class="copy">
+              <div class="eyebrow">${this._esc(name)} · Linino Hnízdo</div>
+              <h2>${this._esc(headline)}</h2>
+              <div class="sub">${this._esc(subline)}</div>
+            </div>
+            <div class="mode">${level === "normal" ? "KLID" : level === "watch" ? "POZOR" : "ŘEŠIT"}</div>
+          </div>
+          <div class="thought">${this._esc(thought)}</div>
+          <div class="health">${chips}</div>
+          <div class="activity-title">poslední činnost</div>
+          <div class="activities">${activity}</div>
+        </div>
+      </h
