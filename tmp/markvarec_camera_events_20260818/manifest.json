@@ -1,0 +1,9 @@
+{
+  "domain": "markvarec_camera_events",
+  "name": "Markvarec Camera Events",
+  "version": "0.1.0",
+  "dependencies": ["camera", "image"],
+  "requirements": [],
+  "codeowners": [],
+  "iot_class": "local_push"
+}
