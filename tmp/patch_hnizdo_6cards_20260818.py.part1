@@ -1,0 +1,102 @@
+from __future__ import annotations
+
+import hashlib
+import json
+import os
+import shutil
+import sys
+import uuid
+from datetime import datetime
+from pathlib import Path
+
+WEATHER = Path("/config/www/lina-weather-card.js")
+RAIN = Path("/config/www/lina-rainwater-card.js")
+ENERGY_FINAL = Path("/config/www/lina-energy-card.js")
+ENERGY_STAGE = Path("/config/www/lina-energy-card.js.new")
+HOME = Path("/config/www/lina-home-card.js")
+RESOURCES = Path("/config/.storage/lovelace_resources")
+DASHBOARD = Path("/config/.storage/lovelace.linino_hnizdo")
+STATE = Path("/tmp/hnizdo_6cards_state.json")
+
+EXPECTED = {
+    str(WEATHER): "b1b2b6d40db817b9d0dab49963ad84ddcbc9592f29ee2622cdbcc7f06278c2b7",
+    str(RAIN): "3dfcfff1bfa507cbd49349e39c96ae1d7e68cfa985f690e4751da6ac2c85b616",
+    str(ENERGY_STAGE): "e0b09b134a8c4fd1e92c53626d9d3d88f3c393c02b575a5e984e36ed1e7f228d",
+}
+
+def sha(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+def assert_sha(path: Path, expected: str) -> None:
+    actual = sha(path)
+    assert actual == expected, f"{path}: expected {expected}, got {actual}"
+
+def replace_once(text: str, old: str, new: str, label: str) -> str:
+    n = text.count(old)
+    assert n == 1, f"{label}: expected exactly one match, got {n}"
+    return text.replace(old, new, 1)
+
+HOME_JS = r'''class LinaHomeCard extends HTMLElement {
+  constructor() {
+    super();
+    this.attachShadow({ mode: "open" });
+    this._config = {};
+    this._hass = null;
+    this._lastRenderKey = "";
+  }
+
+  setConfig(config) {
+    this._config = {
+      name: "Lina",
+      status_entity: "sensor.lina_status",
+      internet_entity: "binary_sensor.markvarec_local_internet",
+      bridge_entity: "automation.chatgpt_home_assistant_bridge",
+      voice_entity: "media_player.loznice_google_nest_mini",
+      ...config,
+    };
+    this._render(true);
+  }
+
+  set hass(hass) {
+    this._hass = hass;
+    this._render();
+  }
+
+  getCardSize() { return 5; }
+  getGridOptions() { return { columns: 12, rows: 5, min_rows: 4 }; }
+
+  _st(id) { return this._hass?.states?.[id]; }
+  _esc(value) {
+    return String(value ?? "").replace(/[&<>"']/g, c => ({
+      "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#039;"
+    }[c]));
+  }
+  _bad(id) {
+    const s = this._st(id)?.state;
+    return !s || ["off","unknown","unavailable"].includes(String(s));
+  }
+  _voiceBad(id) {
+    const s = this._st(id)?.state;
+    return !s || ["unknown","unavailable"].includes(String(s));
+  }
+  _moreInfo(entityId) {
+    if (!entityId) return;
+    this.dispatchEvent(new CustomEvent("hass-more-info", {
+      bubbles:true, composed:true, detail:{ entityId }
+    }));
+  }
+  _time(raw) {
+    if (!raw) return "";
+    const bits = String(raw).split(" ");
+    return bits.length > 1 ? bits[1].slice(0,5) : String(raw).slice(0,5);
+  }
+
+  _render(force = false) {
+    if (!this._hass) return;
+    const c = this._config;
+    const status = this._st(c.status_entity);
+    const a = status?.attributes || {};
+    const name = a.profile_name || c.name || "Lina";
+    const icon = a.profile_icon || "💖";
+    const thought = String(a.thoughts || "Sleduji Markvarec a dávám pozor na to důležité.");
+    const history = Arr
