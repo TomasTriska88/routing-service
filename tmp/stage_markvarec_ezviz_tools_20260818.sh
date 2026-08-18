@@ -8,9 +8,9 @@ mkdir -p "$STAGE"
 curl -fsSL "$BASE/__init__.py" -o "$STAGE/__init__.py"
 curl -fsSL "$BASE/manifest.json" -o "$STAGE/manifest.json"
 curl -fsSL "$BASE/services.yaml" -o "$STAGE/services.yaml"
-[ "$(wc -c < "$STAGE/__init__.py" | tr -d ' ')" -eq 3695 ]
+[ "$(wc -c < "$STAGE/__init__.py" | tr -d ' ')" -eq 3707 ]
 [ "$(wc -c < "$STAGE/manifest.json" | tr -d ' ')" -eq 181 ]
-[ "$(wc -c < "$STAGE/services.yaml" | tr -d ' ')" -eq 155 ]
+[ "$(wc -c < "$STAGE/services.yaml" | tr -d ' ')" -eq 170 ]
 [ "$(sha256sum "$STAGE/__init__.py" | awk '{print $1}')" = "229edc5cf6e7a3e8f46ea74bba8cb617c6421a608c9ff36266ed05bbdd747934" ]
 [ "$(sha256sum "$STAGE/manifest.json" | awk '{print $1}')" = "f9d69c18bd3546ad34db8283087176b604d6b0b7f140550e36afae3eaededeee" ]
 [ "$(sha256sum "$STAGE/services.yaml" | awk '{print $1}')" = "a282c14b44433d744555fdb60ce9a542f9b47cd5c4a7ad264f7c7aea59fa9f3a" ]
