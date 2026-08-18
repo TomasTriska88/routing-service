@@ -1,0 +1,60 @@
+        <div class="forecasts">
+            <div class="forecast-group">
+              <div class="group-title">další dny</div>
+              <div class="forecast">${dailyHtml}</div>
+            </div>
+          </div>'''
+    weather = replace_once(weather, old_forecasts, new_forecasts, "weather remove hourly UI")
+    (WEATHER.with_name(WEATHER.name + ".new-hnizdo")).write_text(weather, encoding="utf-8")
+
+    rain = RAIN.read_text(encoding="utf-8")
+    rain = replace_once(rain,
+        '    const yieldPerMm = this._num("input_number.destovka_zisk_l_na_mm", null);',
+        '''    const yieldPerMm = this._num("input_number.destovka_zisk_l_na_mm", null);
+    const pondFouling = this._txt("sensor.jezirko_zaneseni_cerpadla", "—");
+    const pondCleaning = this._txt("sensor.jezirko_stav_cisteni", "—");
+    const pondPower = this._num("sensor.jezirko_rozvadec_vykon", null);''',
+        "rain pond variables")
+    rain = replace_once(rain,
+        '      doseNote, comfort, pump, use, yieldPerMm',
+        '      doseNote, comfort, pump, use, yieldPerMm, pondFouling, pondCleaning, pondPower',
+        "rain render key")
+    rain = replace_once(rain,
+        ':host { display:block; min-width:0; container-type:inline-size; }',
+        ':host { display:block; height:100%; min-width:0; container-type:inline-size; }',
+        "rain host height")
+    rain = replace_once(rain,
+        'ha-card { overflow:hidden; cursor:pointer; }',
+        'ha-card { height:100%; overflow:hidden; cursor:pointer; }',
+        "rain card height")
+    rain = replace_once(rain,
+        '''        .wrap {
+          padding:14px 16px 12px;
+          min-width:0;''',
+        '''        .wrap {
+          box-sizing:border-box;
+          height:100%;
+          padding:14px 16px 12px;
+          min-width:0;''',
+        "rain wrap height")
+    rain = replace_once(rain,
+        '.water-quality { display:grid; grid-template-columns:1fr 1fr; gap:6px; min-width:0; }',
+        '.water-quality { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; min-width:0; }',
+        "rain water quality columns")
+    rain = replace_once(rain,
+        '<div class="section-title">voda a Savo</div>',
+        '<div class="section-title">voda a jezírko</div>',
+        "rain section title")
+    comfort_block = '''            <div class="quality" data-entity="input_text.destovka_komfort_vody">
+              <div class="qtop"><div class="qicon">🚿</div><div class="qcopy"><small>komfort vody</small><strong>${this._esc(comfort)}</strong></div></div>
+              <p>senzorická zpětná vazba · ne měření chloru</p>
+            </div>'''
+    pond_block = comfort_block + '''
+            <div class="quality" data-entity="sensor.jezirko_stav_cisteni">
+              <div class="qtop"><div class="qicon">🐟</div><div class="qcopy"><small>jezírko</small><strong>${this._esc(pondCleaning)}</strong></div></div>
+              <p>zanesení ${this._esc(pondFouling)} · větev ${this._fmt(pondPower,0," W")}</p>
+            </div>'''
+    rain = replace_once(rain, comfort_block, pond_block, "rain pond tile")
+    (RAIN.with_name(RAIN.name + ".new-hnizdo")).write_text(rain, encoding="utf-8")
+
+    energ
