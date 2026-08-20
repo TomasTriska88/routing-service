@@ -1,0 +1,137 @@
+- id: 'markvarec_destovka_prubezna_bilance'
+  alias: "Markvarec - Dešťovka - průběžná bilance"
+  description: "Každých 15 minut a při změně denních srážek přičte jen nový déšť podle efektivního L/mm a odečte časově poměrnou modelovou spotřebu. První běh pouze založí baseline, aby se staré srážky nezapočítaly znovu."
+  triggers:
+    - trigger: time_pattern
+      minutes: "/15"
+    - trigger: state
+      entity_id: sensor.sencor_srazky_dnes
+  conditions: []
+  actions:
+    - variables:
+        now_ts: "{{ as_timestamp(now()) | float(0) }}"
+        prev_ts: "{{ states('input_number.destovka_bilance_posledni_update_ts') | float(0) }}"
+        current_l: "{{ states('input_number.destovka_stav_l') | float(0) }}"
+        use_per_day: "{{ states('input_number.destovka_denni_spotreba_l') | float(0) }}"
+        gain_per_mm: "{{ states('input_number.destovka_zisk_l_na_mm') | float(0) }}"
+        rain_raw: "{{ states('sensor.sencor_srazky_dnes') }}"
+        rain_valid: "{{ rain_raw not in ['unknown', 'unavailable', 'none', ''] and is_number(rain_raw) }}"
+        rain_now: "{{ rain_raw | float(0) }}"
+        rain_prev: "{{ states('input_number.destovka_bilance_posledni_srazky_dnes_mm') | float(-1) }}"
+        elapsed_s: "{{ ([0, now_ts - prev_ts] | max) if prev_ts > 0 else 0 }}"
+        rain_delta_mm: >-
+          {% if prev_ts <= 0 or rain_prev < 0 or not (rain_valid | bool) %}
+            0
+          {% elif rain_now >= rain_prev %}
+            {{ rain_now - rain_prev }}
+          {% else %}
+            {{ rain_now }}
+          {% endif %}
+        inflow_l: "{{ (rain_delta_mm | float(0)) * gain_per_mm }}"
+        consumption_l: "{{ use_per_day * (elapsed_s | float(0)) / 86400 }}"
+        next_l: "{{ [1000, [0, current_l + (inflow_l | float(0)) - (consumption_l | float(0))] | max] | min | round(1) }}"
+    - action: input_number.set_value
+      target:
+        entity_id: input_number.destovka_stav_l
+      data:
+        value: "{{ next_l }}"
+    - action: input_number.set_value
+      target:
+        entity_id: input_number.destovka_bilance_posledni_srazky_dnes_mm
+      data:
+        value: "{{ rain_now if (rain_valid | bool) else rain_prev }}"
+    - action: input_number.set_value
+      target:
+        entity_id: input_number.destovka_bilance_posledni_update_ts
+      data:
+        value: "{{ now_ts | round(0) }}"
+    - if:
+        - condition: state
+          entity_id: input_boolean.destovka_savo_davka_znama
+          state: "on"
+        - condition: template
+          value_template: "{{ (inflow_l | float(0)) > 0 }}"
+      then:
+        - action: input_number.set_value
+          target:
+            entity_id: input_number.destovka_savo_pritok_od_davky_l
+          data:
+            value: >-
+              {{ [10000,
+                  (states('input_number.destovka_savo_pritok_od_davky_l') | float(0))
+                  + (inflow_l | float(0))] | min | round(1) }}
+  mode: queued
+  max: 10
+
+- id: 'markvarec_destovka_rucni_kalibrace'
+  alias: "Markvarec - Dešťovka - ruční kalibrace"
+  description: "Přímá uživatelská změna modelovaného stavu nádrže je nový fyzický kalibrační bod; resetuje čas a denní srážkovou baseline, aby se nic od posledního ticku nezapočítalo podruhé."
+  triggers:
+    - trigger: state
+      entity_id: input_number.destovka_stav_l
+  conditions:
+    - condition: template
+      value_template: >-
+        {{ trigger.to_state is not none
+           and trigger.to_state.context.user_id is not none
+           and trigger.to_state.context.parent_id is none }}
+  actions:
+    - action: input_number.set_value
+      target:
+        entity_id: input_number.destovka_bilance_posledni_update_ts
+      data:
+        value: "{{ as_timestamp(now()) | round(0) }}"
+    - action: input_number.set_value
+      target:
+        entity_id: input_number.destovka_bilance_posledni_srazky_dnes_mm
+      data:
+        value: >-
+          {{ states('sensor.sencor_srazky_dnes') | float(
+             states('input_number.destovka_bilance_posledni_srazky_dnes_mm') | float(-1)) }}
+  mode: restart
+
+- id: 'markvarec_destovka_savo_nova_davka'
+  alias: "Markvarec - Dešťovka - nová potvrzená dávka Sava"
+  description: "Při změně potvrzeného času nové dávky vynuluje jen počítadlo nového dešťového přítoku od této dávky. Nic samo nedávkuje."
+  triggers:
+    - trigger: state
+      entity_id: input_text.destovka_savo_posledni_cas
+  conditions:
+    - condition: state
+      entity_id: input_boolean.destovka_savo_davka_znama
+      state: "on"
+    - condition: template
+      value_template: >-
+        {{ trigger.to_state is not none
+           and trigger.to_state.state not in ['unknown', 'unavailable', '']
+           and (trigger.from_state is none or trigger.to_state.state != trigger.from_state.state) }}
+  actions:
+    - action: input_number.set_value
+      target:
+        entity_id: input_number.destovka_savo_pritok_od_davky_l
+      data:
+        value: 0
+  mode: restart
+
+- id: 'markvarec_destovka_savo_hlas'
+  alias: "Markvarec - Dešťovka - Savo kontrola hlasem"
+  description: "Při skutečném přechodu Savo modelu do stavu vyžadujícího kontrolu upozorní přítomné obyvatele přes Linin hlas. Start/reload z unknown/unavailable nemluví a hláška nikdy není automatický pokyn k dávce."
+  triggers:
+    - trigger: state
+      entity_id: sensor.destovka_savo_doporuceni
+  conditions:
+    - condition: template
+      value_template: >-
+        {{ trigger.to_state is not none
+           and trigger.to_state.state in ['ZKONTROLOVAT', 'NEPŘIDÁVAT NASLEPO']
+           and trigger.from_state is not none
+           and trigger.from_state.state not in ['unknown', 'unavailable'] }}
+    - condition: state
+      entity_id: binary_sensor.markvarec_nekdo_doma
+      state: "on"
+  actions:
+    - action: script.lina_mluv
+      data:
+        text: "{{ state_attr('sensor.destovka_savo_doporuceni', 'message') }}"
+        priorita: important
+  mode: restart
