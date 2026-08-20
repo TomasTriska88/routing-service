@@ -1,0 +1,10 @@
+set_snapshot:
+  name: Nastavit pracovní agendu
+  description: Uloží pouze normalizovaný read-only snapshot pracovních úkolů z ClickUpu pro Hnízdo a Linu.
+  fields:
+    snapshot:
+      name: Snapshot
+      description: Normalizovaný objekt bez těla e-mailů, příloh a tajných údajů.
+      required: true
+      selector:
+        object:
