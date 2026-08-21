@@ -16,11 +16,12 @@ function lacks(s, msg = s) {
   assert(!src.includes(s), `forbidden: ${msg}`);
 }
 
-has("20260821-compact-allin-r1", "compact version marker");
-assert.strictEqual((src.match(/20260821-compact-allin-r1/g) || []).length, 2);
+has("20260821-smart-sharebar-r2", "current compact smart-share version marker");
+assert.strictEqual((src.match(/20260821-smart-sharebar-r2/g) || []).length, 2);
 has('Math.max(0, siteMonthEnergy) * price + Math.max(0, fixedMonthly)', "month total includes full fixed monthly charge");
-has('const monthCostLabel = a.month.complete ? "Měsíc celkem" : "Odhad celkem";');
-has('class="history history-compact"');
+has('const monthCostLabel = a.month.complete ? "Markvarec · měsíc celkem" : "Markvarec · odhad celkem";');
+has('class="history history-smart"');
+has('class="smart-sharebar"');
 has('class="monthline"');
 has('${this._esc(monthCostText)}');
 has('${this._esc(monthCostLabel)} · vč. fixu');
@@ -50,8 +51,9 @@ const hStart = src.indexOf("    let historyHtml");
 const hEnd = src.indexOf("    this.shadowRoot.innerHTML = `", hStart);
 assert(hStart >= 0 && hEnd > hStart);
 const history = src.slice(hStart, hEnd);
-for (const forbidden of ["sharebar", "sharelegend", "smart-share", "Smart od 20. 8."]) {
-  assert(!history.includes(forbidden), `history still expanded: ${forbidden}`);
+assert.strictEqual((history.match(/class="smart-sharebar"/g) || []).length, 1, "exactly one compact smart sharebar");
+for (const forbidden of ['class="sharelegend"', 'class="smart-share"', 'Smart od 20. 8.', 'Dlouhodobý odhad']) {
+  assert(!history.includes(forbidden), `old expanded history residue: ${forbidden}`);
 }
 
 for (const marker of [
