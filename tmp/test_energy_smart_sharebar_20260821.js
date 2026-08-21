@@ -17,7 +17,7 @@ function must(cond, msg) {
   }
 }
 
-must((text.match(/20260821-smart-sharebar-r1/g) || []).length === 2, "new version marker must appear twice");
+must((text.match(/20260821-smart-sharebar-r2/g) || []).length === 2, "new version marker must appear twice");
 must(text.includes('history_start: "2026-08-20T15:00:00+02:00"'), "shared smart baseline must remain 20 Aug 2026 15:00 +02");
 must(text.includes('type: "recorder/statistics_during_period"'), "ratio must remain based on Recorder statistics");
 must(text.includes("const smartTomasKwh = Number(a.history.tomas);"), "bar must use smart Tomáš kWh");
@@ -27,6 +27,7 @@ must(text.includes("const smartParentsPct = Number(a.history.parentsPct);"), "ba
 must(text.includes('class="smart-sharebar"'), "smart share bar must render");
 must(text.includes('class="smart-sharebar-tomas"'), "Tomáš bar segment must render");
 must(text.includes('class="smart-sharebar-parents"'), "parent bar segment must render");
+must(text.includes("background:#ef6c00;"), "parent bar must keep original orange identity");
 must(text.includes("T ${this._fmt(smartTomasKwh, 1)} kWh"), "Tomáš kWh must be visible");
 must(text.includes("R ${this._fmt(smartParentsKwh, 1)} kWh"), "parent kWh must be visible");
 must(text.includes("od 20. 8."), "bar must visibly identify smart overlap start");
@@ -35,6 +36,8 @@ must(text.includes("const topLoads = a.loads.slice(0, 3);"), "three top loads mu
 must(text.includes('class="monthline"'), "compact monthly line must remain");
 must(text.includes("${this._esc(monthCostText)}"), "all-in monthly cost hero must remain");
 must(text.includes("${this._esc(monthCostLabel)} · vč. fixu"), "all-in fixed-charge label must remain");
+must(text.includes('const monthCostLabel = a.month.complete ? "Markvarec · měsíc celkem" : "Markvarec · odhad celkem";'), "monthly all-in label must explicitly identify whole Markvarec");
+must(text.includes("const refreshMs = Math.max(60000, Number(this._config.history_refresh_ms) || 900000);"), "smart history refresh remains 15 minutes by default");
 
 const start = text.indexOf('    let historyHtml = "";');
 const end = text.indexOf('    this.shadowRoot.innerHTML = `', start);
