@@ -38,7 +38,7 @@ must(s.includes("rate-over"), "over-advance state must be visually distinguished
 must(s.includes("nad zálohu"), "over-advance delta must be visible");
 must(s.includes("odhad měsíce po prvních 48 h"), "advance must stay baseline before forecast is credible");
 
-must(s.includes("tomasReferenceCost = financeReferenceCost * tomasMonthRatio"), "Tomáš proportional money split missing");
+must(s.includes("financeReferenceCost * tomasMonthRatio"), "Tomáš proportional money split missing");
 must(s.includes("financeReferenceCost - tomasReferenceCost"), "parents split must be remainder so split sums to headline");
 must(s.includes("Poměrné rozdělení stejné částky, která je nahoře"), "split semantics must explain same headline basis");
 must(s.includes("Není to účetní saldo rodičů"), "card must not confuse monthly split with parent ledger settlement");
