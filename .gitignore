@@ -32,3 +32,11 @@ nbdist/
 Thumbs.db
 desktop.ini
 .DS_Store
+
+# Keep local scratch and private configuration outside this public example
+/tmp/
+/temp/
+/.scratch/
+.env
+.env.*
+!.env.example
