@@ -1,4 +1,4 @@
-package com.pwc.routing.controller;
+package io.github.tomastriska88.routing.controller;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

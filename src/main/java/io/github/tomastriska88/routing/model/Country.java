@@ -1,4 +1,4 @@
-package com.pwc.routing.model;
+package io.github.tomastriska88.routing.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.List;

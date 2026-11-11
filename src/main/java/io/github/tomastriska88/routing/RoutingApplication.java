@@ -1,4 +1,4 @@
-package com.pwc.routing;
+package io.github.tomastriska88.routing;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

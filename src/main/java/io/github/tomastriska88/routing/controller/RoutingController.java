@@ -1,6 +1,6 @@
-package com.pwc.routing.controller;
+package io.github.tomastriska88.routing.controller;
 
-import com.pwc.routing.service.RoutingService;
+import io.github.tomastriska88.routing.service.RoutingService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;

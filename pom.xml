@@ -8,7 +8,7 @@
         <version>3.3.0</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
-    <groupId>com.pwc</groupId>
+    <groupId>io.github.tomastriska88</groupId>
     <artifactId>routing-service</artifactId>
     <version>1.0.0</version>
     <name>routing-service</name>

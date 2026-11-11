@@ -1,6 +1,6 @@
-package com.pwc.routing.service;
+package io.github.tomastriska88.routing.service;
 
-import com.pwc.routing.model.Country;
+import io.github.tomastriska88.routing.model.Country;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.DefaultResourceLoader;
