@@ -29,7 +29,7 @@ This service is designed with clean architecture principles, emphasizing perform
 ```
 
 ### 1. High Performance & Offline Resilience
-* **Startup Initialization**: The country border database is loaded **once** at application startup. By default, it fetches the JSON dataset asynchronously from GitHub.
+* **Startup Initialization**: The country border database is loaded **once** at application startup. By default, it fetches the JSON dataset from GitHub during the application-ready initialization step.
 * **Offline Classpath Fallback**: If the remote server is down, unreachable, or the application is run in an offline development environment, the service automatically falls back to loading a bundled copy of `countries.json` from the classpath.
 * **In-Memory Graph**: Once parsed, the database is mapped into a thread-safe `ConcurrentHashMap<String, List<String>>` acting as an adjacency list. All incoming routing queries are solved instantly from memory, avoiding slow external API calls.
 
@@ -160,3 +160,9 @@ curl -i http://localhost:8080/routing/CZE/CZE
   ]
 }
 ```
+
+---
+
+## 📚 Country data and licensing
+
+The service uses the [mledoze/countries](https://github.com/mledoze/countries) dataset as its default remote data source and bundles `src/main/resources/countries.json` for offline fallback. The upstream country database is licensed under the [Open Database License (ODbL) 1.0](https://opendatacommons.org/licenses/odbl/1.0/). See the upstream repository for its data-license terms and attribution details.
